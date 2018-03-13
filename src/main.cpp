@@ -28,60 +28,64 @@ std::string hasData(std::string s) {
   return "";
 }
 
-const double constant_speed = 9;
+const double constant_speed = 20;
+const double max_turn_angle = deg2rad(25);
 
 int main()
 {
   uWS::Hub h;
 
-  PID pid_steer(0.2, 0.004, 3.0);
-  PID pid_speed(0.2, 0.004, 3.0);
-  // TODO: Initialize the pid variable.
+  PID pid_steer(0.2, 0.002, 8.0);
+  PID pid_speed(0.2, 0.004, 6.0);
 
   h.onMessage([&pid_steer, &pid_speed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
-    if (length && length > 2 && data[0] == '4' && data[1] == '2')
-    {
-      auto s = hasData(std::string(data).substr(0, length));
-      if (s != "") {
-        auto j = json::parse(s);
-        std::string event = j[0].get<std::string>();
-        if (event == "telemetry") {
-          // j[1] is the data JSON object
-          double cte = std::stod(j[1]["cte"].get<std::string>());
-          double speed = std::stod(j[1]["speed"].get<std::string>());
-          double angle = std::stod(j[1]["steering_angle"].get<std::string>());
-          /*
-          * TODO: Calcuate steering value here, remember the steering value is
-          * [-1, 1].
-          * NOTE: Feel free to play around with the throttle and speed. Maybe use
-          * another PID controller to control the speed!
-          */
-          pid_steer.UpdateError(cte);
-          double steer_value = -pid_steer.TotalError();
-
-          pid_speed.UpdateError(speed - constant_speed);
-          double throttle_value = -pid_speed.TotalError();
-          
-          // DEBUG
-          std::cout << "CTE: " << cte << " Angle: " << angle
-                    << " Speed: " << speed << std::endl;
-
-          json msgJson;
-          msgJson["steering_angle"] = 0;
-          msgJson["throttle"] = throttle_value;
-          auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
-          ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-        }
-      } else {
-        // Manual driving
-        std::string msg = "42[\"manual\",{}]";
-        ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-      }
+    if (!(length && length > 2 && data[0] == '4' && data[1] == '2')) {
+      return;
     }
+    
+    auto s = hasData(std::string(data).substr(0, length));
+    if (s == "") {
+      // Manual driving
+      std::string msg = "42[\"manual\",{}]";
+      ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+      return;
+    }
+
+    auto j = json::parse(s);
+    std::string event = j[0].get<std::string>();
+    if (event != "telemetry") {
+      return;
+    }
+
+    // j[1] is the data JSON object
+    const double cte = std::stod(j[1]["cte"].get<std::string>());
+    const double speed = std::stod(j[1]["speed"].get<std::string>());
+    const double angle = std::stod(j[1]["steering_angle"].get<std::string>());
+    
+    pid_steer.UpdateError(cte);
+    double steering_value = -pid_steer.TotalError();
+    // Cap steering value to the maxium turing angle of 25 degrees.
+    if (abs(steering_value) > max_turn_angle) {
+      steering_value = steering_value > 0 ? max_turn_angle : -max_turn_angle;
+    }
+    // Scale it back to [-1, 1]
+    steering_value /= max_turn_angle;
+
+    pid_speed.UpdateError(speed - constant_speed);
+    double throttle_value = -pid_speed.TotalError();
+    
+    // DEBUG
+    std::cout << "CTE: " << cte << " Angle: " << angle << " Speed: " << speed << std::endl;
+
+    json msgJson;
+    msgJson["steering_angle"] = steering_value;
+    msgJson["throttle"] = throttle_value;
+    auto msg = "42[\"steer\"," + msgJson.dump() + "]";
+    std::cout << msg << std::endl;
+    ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
   });
 
   // We don't need this since we're not using HTTP but if it's removed the program
