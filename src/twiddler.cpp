@@ -34,7 +34,7 @@ std::string hasData(std::string s) {
 const double constant_speed = 20;
 const double max_turn_angle = deg2rad(25);
 
-const int twiddler_steps = 125;
+const int twiddler_steps = 500;
 
 int main()
 {
@@ -54,8 +54,8 @@ int main()
   double curr_err = 0;
   double best_err;
 
-  vector<double> p = {0, 0, 0};
-  vector<double> dp = {1, 1, 1};
+  vector<double> p = {0.2, 0.004, 8.0};
+  vector<double> dp = {0.05, 0.001, 1.5};
   PID pid_steer(p[0], p[1], p[2]);
 
   h.onMessage([&]
@@ -84,7 +84,7 @@ int main()
     // j[1] is the data JSON object
     const double cte = std::stod(j[1]["cte"].get<std::string>());
     const double speed = std::stod(j[1]["speed"].get<std::string>());
-    const double angle = std::stod(j[1]["steering_angle"].get<std::string>());
+    // const double angle = std::stod(j[1]["steering_angle"].get<std::string>());
     
     pid_steer.UpdateError(cte);
     double steering_value = -pid_steer.TotalError();

@@ -35,7 +35,7 @@ int main()
 {
   uWS::Hub h;
 
-  PID pid_steer(0.2, 0.002, 8.0);
+  PID pid_steer(0.2, 0.002, 6.0);
   PID pid_speed(0.2, 0.004, 6.0);
 
   h.onMessage([&pid_steer, &pid_speed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
