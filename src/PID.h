@@ -9,6 +9,7 @@ public:
   double p_error;
   double i_error;
   double d_error;
+  bool first_time;
 
   /*
   * Coefficients
@@ -21,6 +22,10 @@ public:
   * Constructor
   */
   PID(double Kp, double Ki, double Kd);
+
+  void ClearErrors();
+
+  void SetParams(double Kp, double Ki, double Kd);
 
   /*
   * Destructor.

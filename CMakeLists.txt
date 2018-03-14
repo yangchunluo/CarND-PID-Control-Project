@@ -7,8 +7,6 @@ add_definitions(-std=c++11)
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
-set(sources src/PID.cpp src/main.cpp)
-
 include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 
@@ -16,11 +14,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 include_directories(/usr/local/opt/openssl/include)
 link_directories(/usr/local/opt/openssl/lib)
-link_directories(/usr/local/Cellar/libuv/1*/lib)
 
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
 
-add_executable(pid ${sources})
+add_executable(pid src/PID.cpp src/main.cpp)
+add_executable(twiddler src/PID.cpp src/twiddler.cpp)
 
 target_link_libraries(pid z ssl uv uWS)
+target_link_libraries(twiddler z ssl uv uWS)
